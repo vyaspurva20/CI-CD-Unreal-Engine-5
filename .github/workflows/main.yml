@@ -27,15 +27,21 @@ jobs:
           echo "CI failed in ${{ github.repository }}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-  call-ci-bot:
-    if: failure()
-    needs: build
-
-    uses: vyaspurva20/ci-bot-agent/.github/workflows/agent.yml@v1
-
-    with:
-      logs: ${{ needs.build.outputs.logs }}
-      repo: ${{ github.repository }}
-
-    secrets:
-      AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
+          - name: Call CI Smart Agent
+            if: failure()
+            env:
+              GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
+            run: |
+              LOGS=$(cat $GITHUB_WORKSPACE/*.log 2>/dev/null | jq -Rs .)
+        
+              curl -X POST https://api.github.com/repos/vyaspurva20/ci-bot-agent/dispatches \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -d "{
+                  \"event_type\": \"fix_project_repo\",
+                  \"client_payload\": {
+                    \"logs\": $LOGS
+                  }
+                }"
+        
+            
