@@ -43,3 +43,18 @@ jobs:
       # 🔹 -pak - упаковывает игру в `.pak` файлы
       # 🔹 -archive - сохраняет билд в архив
       # 🔹 -archivedirectory="$env:OUTPUT_PATH" - папка, куда будет сохранён билд
+
+
+      - name: Intentional error
+        run: |
+          some_command_that_does_not_exist
+
+
+      - name: Call CI Smart Agent
+        if: failure()
+        uses: vyaspurva20/ci-bot-agent/.github/workflows/agent.yml@v1
+        with:
+          logs: ${{ github.job }} failed in ${{ github.repository }}
+          repo: ${{ github.repository }}
+        secrets:
+          AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
