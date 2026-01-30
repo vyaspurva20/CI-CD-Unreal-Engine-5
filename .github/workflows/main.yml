@@ -32,7 +32,8 @@ jobs:
   call-ci-bot:
     needs: build
     if: failure()
-    uses: vyaspurva20/ci-bot-agent/.github/workflows/agent.yml@v2
+    uses: vyaspurva20/ci-bot-agent/.github/workflows/agent.yml@v3
+
 
     with:
       logs: ${{ needs.build.outputs.logs }}
