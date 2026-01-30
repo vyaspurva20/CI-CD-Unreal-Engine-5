@@ -32,9 +32,11 @@ jobs:
             -d "{
               \"event_type\": \"fix_project_repo\",
               \"client_payload\": {
+                \"repo\": \"${{ github.repository }}\",
                 \"logs\": $LOGS
               }
             }"
+
 
 
           
