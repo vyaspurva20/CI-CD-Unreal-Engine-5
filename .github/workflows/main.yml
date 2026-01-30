@@ -2,12 +2,12 @@ name: CI-CD Unreal Engine Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     outputs:
       logs: ${{ steps.capture.outputs.logs }}
 
@@ -15,30 +15,27 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # ❌ Intentional failure
       - name: Intentional error
         run: |
           some_command_that_does_not_exist
 
-      - name: Call CI Smart Agent
+      # ✅ Capture logs (THIS WAS BROKEN BEFORE)
+      - name: Capture logs
+        id: capture
         if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
         run: |
-          LOGS=$(cat $GITHUB_WORKSPACE/**/*.log 2>/dev/null | jq -Rs . || echo "\"Build failed\"")
-      
-          curl -X POST https://api.github.com/repos/vyaspurva20/ci-bot-agent/dispatches \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -d "{
-              \"event_type\": \"fix_project_repo\",
-              \"client_payload\": {
-                \"repo\": \"${{ github.repository }}\",
-                \"logs\": $LOGS
-              }
-            }"
+          echo "logs<<EOF" >> $GITHUB_OUTPUT
+          echo "Command failed: some_command_that_does_not_exist" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-
-
-          
-        
-            
+  call-ci-bot:
+    needs: build
+    if: failure()
+    uses: vyaspurva20/ci-bot-agent/.github/workflows/agent.yml@v1
+    with:
+      logs: ${{ needs.build.outputs.logs }}
+      repo: ${{ github.repository }}
+    secrets:
+      AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
